@@ -2,3 +2,4 @@ python-telegram-bot==13.11
 requests==2.27.1
 youtube-transcript-api==0.4.4
 python-dotenv==0.20.0
+redis==4.1.4
