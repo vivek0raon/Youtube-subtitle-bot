@@ -4,9 +4,12 @@ import logging
 import requests
 import urllib
 from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.formatters import TextFormatter
 ##uncomment this after filling the .env folder
-#from dotenv import load_dotenv 
+# from dotenv import load_dotenv 
 import os
+
+from Addons import db
 
 from telegram import (
     Update,
@@ -14,7 +17,8 @@ from telegram import (
     InlineKeyboardMarkup,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
-    ParseMode
+    ParseMode,
+    utils
 )
 
 from telegram.ext import (
@@ -30,7 +34,7 @@ from telegram.ext import (
 
 from telegram.utils.helpers import escape_markdown
 ##uncomment this after filling the .env folder
-#load_dotenv()
+# load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -40,8 +44,7 @@ logging.basicConfig(
 log = logging.getLogger("YoutubeTranscript")
 log.info("\n\n Bot is Starting......")
 
-CHOOSING, SENDING_YOUTUBE_URL, CHOOSING_LANGUAGE, CHOOSING_FORMAT, TRANSLATE, AGE_RISTRICTED = range(
-    6)
+CHOOSING, SENDING_YOUTUBE_URL, CHOOSING_LANGUAGE, CHOOSING_FORMAT, TRANSLATE, AGE_RISTRICTED, SEND_BROADCAST = range(7)
 
 choose_button = [
     ["👻 Extract subtitle", "ℹ️ Help", "👋Done"]
@@ -52,16 +55,17 @@ choose_button_markup = ReplyKeyboardMarkup(
 
 
 def is_url(text):
-    youtube_link_pattern = r"((?:(?:https?:\/\/)(?:www)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11}))"
+    youtube_link_pattern = r"((?:(?:https?:\/\/)(?:\w+)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11}))"
     link = re.match(youtube_link_pattern, text)
     if link:
         return link.group(2)
     return None
 
 
-def no_of_subtitle(video_id, update):
+def no_of_subtitle(video_id, update, context):
     try:
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        context.user_data["transcript_list"] = transcript_list
     except:
         update.message.reply_text("No subtitle available for this video",
                                   reply_markup=choose_button_markup)
@@ -71,7 +75,10 @@ def no_of_subtitle(video_id, update):
     for subtitle in transcript_list:
         language = subtitle.language
         language_code = subtitle.language_code
-        language_dictionary[language] = language_code
+        if subtitle.is_generated:
+            language_dictionary[language] = f'{language_code}_g'
+        else:
+            language_dictionary[language] = language_code
         button = [InlineKeyboardButton(
             text=language, callback_data=language)]
         language_button.append(button)
@@ -128,6 +135,15 @@ def start(update: Update, context: CallbackContext):
                               "☑️*Click on Help if you need help regarding any error that you are geting while using this bot*",
                               reply_markup=choose_button_markup,
                               parse_mode=ParseMode.MARKDOWN_V2)
+    chat_id = update.message.chat_id
+    if not db.is_added("BOTUSERS", update.message.chat_id):
+        db.add_to_db("BOTUSERS", update.message.chat_id)
+    if context.user_data.get("returned_data"):
+        del context.user_data["returned_data"]
+    if context.user_data.get("button_list_markup"):
+        del context.user_data["button_list_markup"]
+    if context.user_data.get("language_button"):
+        del context.user_data["language_button"]
     return CHOOSING
 
 
@@ -147,16 +163,22 @@ def choosing(update: Update, context: CallbackContext):
             "*To extract subtitle follow this step:*\n"
             "👉_Click on Extract subtitle then give your link of youtube video from which you want to extract subtitle_\n"
             "👉_Click on available language or click on translate to translate subtitle into the unavaliable language_\n"
-            "🔐_choose format 'VTT' or 'SRT'_\n"
+            "🔐_Choose format 'VTT', 'SRT' or TXT \(Without timestamp\)_\n"
             "🙃Done\n\n"
-            "*To extract subtitle from Age ristricted youtube video follow this step:*\n"
-            "🔴_Will implement this feature in future currently it will not work for age ristricted videos_",
+            "🔴*ANY PROMBLEM?*\n"
+            "👉_Make sure that the video have subtitle available either mannual or generated_\n"
+            "👉_Make sure that video isn't georestricted_\n"
+            "👉_Make sure that video isn't age restricted_\n\n"
+            "*Didn't find your solution contact @my\_name\_is\_vivek , stating your problem with  video link attached which isn't working for you\.*",
             parse_mode=ParseMode.MARKDOWN_V2
         )
 
-
-format_button = [[InlineKeyboardButton(text="SRT", callback_data="SRT")], [
-    InlineKeyboardButton(text='VTT', callback_data="VTT")], [InlineKeyboardButton(text="🔙 Back", callback_data="back")]]
+# MAKING BUTTON TO CHOOSE 
+format_button = [[InlineKeyboardButton(text="SRT", callback_data="SRT")], 
+    [InlineKeyboardButton(text='VTT', callback_data="VTT")], 
+    [InlineKeyboardButton(text='TXT (NO TIMESTAMP)', callback_data="TXT")],
+    [InlineKeyboardButton(text='TXT (NO TIMESTAMP) NO WORD WRAP', callback_data="TXT_W")],
+    [InlineKeyboardButton(text="🔙 Back", callback_data="back")]]
 
 format_button_markup = InlineKeyboardMarkup(format_button)
 
@@ -186,18 +208,37 @@ def choosing_language(update: Update, context: CallbackContext):
         "🔠 *language selected*: {} ".format(escape_markdown(user_language, version=2)),
         parse_mode=ParseMode.MARKDOWN_V2)
     context.user_data["selected_language"] = selected_language
+    
     if user_language in language:
         language_code = language_dictionary[user_language]
-        returned_data = YouTubeTranscriptApi.get_transcript(
-            video_id, languages=[language_code])
+        check_generated = "_g" in language_code
+        if check_generated:
+            transcript_list = context.user_data["transcript_list"]
+            language_code = language_code.replace("_g", "")
+            transcript = transcript_list.find_generated_transcript([language_code])
+            returned_data = transcript.fetch()
+        else:
+            returned_data = YouTubeTranscriptApi.get_transcript(
+                video_id, languages=[language_code])
         context.user_data["returned_data"] = returned_data
     else:
         translate_dictionary = context.user_data["translate_dictionary"]
         language_code = translate_dictionary[user_language]
-        transcript = context.user_data["transcript"]
-        translated_transcript = transcript.translate(f'{language_code}')
-        returned_data = translated_transcript.fetch()
-        context.user_data["returned_data"] = returned_data
+        #fixing the english translation 
+        notavailable = True
+        if user_language == "English":
+            try:
+                returned_data = YouTubeTranscriptApi.get_transcript(
+                video_id, languages=[language_code])
+                context.user_data["returned_data"] = returned_data
+                notavailable = False
+            except:
+                notavailable = True
+        if notavailable:
+            transcript = context.user_data["transcript"]
+            translated_transcript = transcript.translate(f'{language_code}')
+            returned_data = translated_transcript.fetch()
+            context.user_data["returned_data"] = returned_data
 
     update.callback_query.message.reply_text(
         text="🧖 *In which format do want your subtitle?:*",
@@ -214,7 +255,7 @@ def translate(update: Update, context: CallbackContext):
         transcript = transcript_list.find_transcript(["en"])
     except:
         transcript = transcript_list.find_transcript(
-            [f'{list(language_dictionary.values())[0]}'])
+            [f'{list(language_dictionary.values())[0].replace("_g","")}'])
         pass
     context.user_data["transcript"] = transcript
     translate_list = transcript.translation_languages
@@ -254,26 +295,26 @@ def choosing_format(update: Update, context: CallbackContext):
     if user_format == "back":
         selected_language = context.user_data.get("selected_language")
         selected_language.delete()
-        if context.user_data.get("button_list_markup"):
-            button_list_markup = context.user_data["button_list_markup"]
-            update.callback_query.message.edit_text(
-                text="⌨️*Choose the language in which your want your subtitle to 🔄convert:*",
-                reply_markup=button_list_markup,
-                parse_mode=ParseMode.MARKDOWN_V2)
-        else:
-            language_button = context.user_data.get("language_button")
-            update.callback_query.message.edit_text(text="*⏬Choose the available language in this video or Click on* _Translate_ *to translate subtitle to other 🉐languages:*",
+        language_button = context.user_data.get("language_button")
+        update.callback_query.message.edit_text(text="*⏬Choose the available language in this video or Click on* _Translate_ *to translate subtitle to other 🉐languages:*",
                                                     reply_markup=language_button,
                                                     parse_mode=ParseMode.MARKDOWN_V2)
         return CHOOSING_LANGUAGE
     user_chat_id = update.callback_query.message.chat_id
+    Display_format = user_format.replace("_W","")
     bot_message = update.callback_query.message.edit_text(
-        text="🟢*Your subtitle is ready:*",
+        text=f"*Format: {Display_format}\n\n🟢Your subtitle is ready:*",
         parse_mode=ParseMode.MARKDOWN_V2)
+    text_formatted = ""
     lines = []
+    # MAKING TIMESTAMP
     for i, line in enumerate(returned_data):
+        if user_format == "TXT_W":
+            line = line['text'].replace("\n", " ")
+            text_formatted = text_formatted + line + " "
+            continue
         if i < len(returned_data) - 1:
-            time_text = "{} --> {}".format(
+             time_text = "{} --> {}".format(
                 make_timestamp(line["start"], user_format),
                 make_timestamp(returned_data[i+1]['start'], user_format)
             )
@@ -288,18 +329,32 @@ def choosing_format(update: Update, context: CallbackContext):
         if user_format == "SRT":
             lines.append(
                 str(i+1)+'\n'+"{}\n{}".format(time_text, line['text']))
+    if user_format == "TXT":
+        text_formatted = TextFormatter().format_transcript(returned_data)
     if user_format == "VTT":
         formated_string = "WEBVTT\n\n" + "\n\n".join(lines) + "\n"
         create_file(formated_string, 'vtt', user_chat_id)
-    if user_format == "SRT":
+    elif user_format == "SRT":
         formated_string = "\n\n".join(lines) + "\n"
         create_file(formated_string, 'srt', user_chat_id)
+    elif user_format == "TXT":
+        text_formatted.replace("  ", " ")
+        create_file(text_formatted , 'txt', user_chat_id)
+    elif user_format == "TXT_W":
+         create_file(text_formatted , 'txt', user_chat_id)
+         user_format = "TXT"
     video_id = context.user_data.get('video_id')
     my_file_name = video_title(video_id)
     context.bot.send_document(user_chat_id, open(
         f"{user_chat_id}.{user_format.lower()}", "rb"), f"{my_file_name}.{user_format.lower()}",
         reply_markup=choose_button_markup, caption=f"Made with 🧠 \n~by @{bot_message.from_user.username}")
     os.remove(f"{user_chat_id}.{user_format.lower()}")
+    if context.user_data.get("returned_data"):
+        del context.user_data["returned_data"]
+    if context.user_data.get("button_list_markup"):
+        del context.user_data["button_list_markup"]
+    if context.user_data.get("language_button"):
+        del context.user_data["language_button"]
     return CHOOSING
 
 
@@ -314,7 +369,7 @@ def sending_youtube_url(update: Update, context: CallbackContext):
             parse_mode=ParseMode.MARKDOWN_V2)
         return CHOOSING
     else:
-        button_dictionary = no_of_subtitle(video_id, update)
+        button_dictionary = no_of_subtitle(video_id, update, context)
         if button_dictionary == CHOOSING:
             return CHOOSING
         language_button, language_dictionary = button_dictionary
@@ -324,6 +379,69 @@ def sending_youtube_url(update: Update, context: CallbackContext):
         context.user_data["language_dictionary"] = language_dictionary
         return CHOOSING_LANGUAGE
 
+
+def stat(update: Update, context: CallbackContext):
+    update.message.reply_text(
+        text="*🤖Bot stats*\n\n💚TOTAL USERS: {}".format(len(db.get_all("BOTUSERS"))),
+        reply_markup=ReplyKeyboardRemove(),
+        parse_mode=ParseMode.MARKDOWN_V2)
+
+
+def broadcast(update: Update, context: CallbackContext):
+    update.message.reply_text(text = " Send me your the message to broadcast")
+    return SEND_BROADCAST
+
+
+def send_broadcast(update: Update, context: CallbackContext):
+    message_type = utils.helpers.effective_message_type(update)
+    update.message.reply_text("🔃In progress...")
+    users = db.get_all("BOTUSERS")
+    done = error = 0
+    for i in users:
+        try:
+            if message_type == 'text':
+                msg = update.message.text
+                context.bot.send_message(int(i),msg)
+            elif message_type == 'photo':
+                msg = update.message.photo
+                image_caption = update.message.caption
+                if image_caption == None:
+                    context.bot.send_photo(int(i),msg[-1])
+                else:
+                    context.bot.send_photo(int(i),msg[-1],caption= image_caption)
+            elif message_type == 'video':
+                msg = update.message.video
+                video_caption = update.message.caption
+                if video_caption == None:
+                    context.bot.send_video(int(i),msg)
+                else:
+                    context.bot.send_video(int(i),msg,caption= video_caption)
+            elif message_type == 'audio':
+                msg = update.message.audio
+                audio_caption = update.message.caption
+                if audio_caption == None:
+                    context.bot.send_audio(int(i),msg)
+                else:
+                    context.bot.send_audio(int(i),msg,caption= audio_caption)
+            elif message_type == 'document':
+                msg = update.message.document
+                document_caption = update.message.caption
+                if document_caption == None:
+                    context.bot.send_document(int(i),msg)
+                else:
+                    context.bot.send_document(int(i),msg,caption= document_caption)
+            elif message_type == 'voice':
+                msg = update.message.voice
+                context.bot.send_voice(int(i),msg)
+            elif message_type == 'video_note':
+                msg = update.message.video_note
+                context.bot.send_video_note(int(i),msg)
+            done +=1
+        except Exception as e:
+            error +=1
+            log.exception(e)
+    update.message.reply_text("📩 Broadcast completed.\n\n🟩 Success: {}\n🟥 Failed: {}".format(done, error))
+    return ConversationHandler.END
 
 def done(update: Update, context: CallbackContext):
     update.message.reply_text(
@@ -339,10 +457,10 @@ def main():
         updater = Updater(token=os.getenv("API_TOKEN"),
                           persistence=persistence)
         dispatcher = updater.dispatcher
+        AUTH = [int(i) for i in os.getenv("OWNER").split(" ")]
     except Exception as e:
         log.exception(e)
         exit(1)
-
     conversation_handler = ConversationHandler(
         entry_points=[
             CommandHandler("start", start),
@@ -371,7 +489,7 @@ def main():
             ],
             CHOOSING_FORMAT: [
                 CallbackQueryHandler(
-                    choosing_format, pattern=r'^(SRT|VTT|back)$')
+                    choosing_format, pattern=r'^(SRT|VTT|TXT|TXT_W|back)$')
             ],
         },
         fallbacks=[CommandHandler("start", start), MessageHandler(
@@ -380,7 +498,25 @@ def main():
         persistent=True
     )
 
+    stat_handler = CommandHandler("stat", stat, Filters.user(AUTH))
+
+    broadcast_handler = ConversationHandler(
+        entry_points=[
+            CommandHandler("broadcast", broadcast, Filters.user(AUTH)),
+        ],
+        states={SEND_BROADCAST: [
+            MessageHandler(
+                    Filters.all, send_broadcast)
+        ]},
+        fallbacks=[CommandHandler("start", start), CommandHandler(
+            "broadcast", broadcast), CommandHandler(
+            "stat", stat)],
+        # persistent=True
+    )
+
     dispatcher.add_handler(conversation_handler)
+    dispatcher.add_handler(stat_handler)
+    dispatcher.add_handler(broadcast_handler)
     updater.start_polling()
     updater.idle()
 
