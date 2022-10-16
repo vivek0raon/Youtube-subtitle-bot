@@ -163,7 +163,7 @@ def choosing(update: Update, context: CallbackContext):
             "*To extract subtitle follow this step:*\n"
             "👉_Click on Extract subtitle then give your link of youtube video from which you want to extract subtitle_\n"
             "👉_Click on available language or click on translate to translate subtitle into the unavaliable language_\n"
-            "🔐_Choose format 'VTT', 'SRT' or TXT \(WITHOUT TIMESTAMP\). NO WORD WRAP version of TXT will extract subtitle as paragraph_\n"
+            "🔐_Choose format 'VTT', 'SRT' or TXT \(WITHOUT TIMESTAMP\)\. NO WORD WRAP version of TXT will extract subtitle as paragraph_\n"
             "🙃Done\n\n"
             "🔴*ANY PROBLEM?*\n"
             "👉_Make sure that the video link is valid_\n"
