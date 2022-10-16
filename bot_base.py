@@ -55,7 +55,7 @@ choose_button_markup = ReplyKeyboardMarkup(
 
 
 def is_url(text):
-    youtube_link_pattern = r"((?:(?:https?:\/\/)(?:\w+)?\.?(?:youtu\.?be)(?:\.com)?\/(?:.*[=/])*)([^= &?/\r\n]{8,11}))"
+    youtube_link_pattern = r"(be\/|embed\/|v\/|e\/|a=|v=)([^\/&?\n\r=#\s]*)"
     link = re.match(youtube_link_pattern, text)
     if link:
         return link.group(2)
@@ -163,13 +163,14 @@ def choosing(update: Update, context: CallbackContext):
             "*To extract subtitle follow this step:*\n"
             "👉_Click on Extract subtitle then give your link of youtube video from which you want to extract subtitle_\n"
             "👉_Click on available language or click on translate to translate subtitle into the unavaliable language_\n"
-            "🔐_Choose format 'VTT', 'SRT' or TXT \(Without timestamp\)_\n"
+            "🔐_Choose format 'VTT', 'SRT' or TXT \(WITHOUT TIMESTAMP\). NO WORD WRAP version of TXT will extract subtitle as paragraph_\n"
             "🙃Done\n\n"
-            "🔴*ANY PROMBLEM?*\n"
+            "🔴*ANY PROBLEM?*\n"
+            "👉_Make sure that the video link is valid_\n"
             "👉_Make sure that the video have subtitle available either mannual or generated_\n"
             "👉_Make sure that video isn't georestricted_\n"
             "👉_Make sure that video isn't age restricted_\n\n"
-            "*Didn't find your solution contact @my\_name\_is\_vivek , stating your problem with  video link attached which isn't working for you\.*",
+            "*Didn't find your solution contact @my\_name\_is\_vivek , stating your problem with video link attached which isn't working for you\.*",
             parse_mode=ParseMode.MARKDOWN_V2
         )
 
