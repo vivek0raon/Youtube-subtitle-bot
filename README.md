@@ -1,5 +1,5 @@
 # Youtube-subtitle-bot
-A telegram bot that extract the subtitle from the youtube video links. It can also translate the subtitle to another languages. It provide different format to downlad subtitle file ie: SRT and VTT. Star the repo if you liked this bot.
+A telegram bot that extracts subtitle from the youtube video link. It can also translate the subtitle to another languages. It provides different formats to download subtitle file i.e. SRT and VTT and TXT. Star the repo if you liked this bot.
 
 # Want to use the bot?
 Click here -> [@ytsubtitle_bot](https://t.me/ytsubtitle_bot)
