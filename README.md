@@ -4,5 +4,8 @@ A telegram bot that extracts subtitle from the youtube video link. It can also t
 # Want to use the bot?
 Click here -> [@ytsubtitle_bot](https://t.me/ytsubtitle_bot)
 
-# Contribute
-Though there isn't much to impove or enhance in this simple bot but any suggestion or enhancement request will be appreciated.
+# Are you developer?
+You can fork this repo and modify as you wish and create Pull request. I will merge it after reviewing it.
+You can deploy you own instance of bot here:
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template/cHiU4n?referralCode=h7VRtw)
