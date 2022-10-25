@@ -5,7 +5,7 @@ import requests
 import urllib
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
-##uncomment this after filling the .env folder
+##uncomment the comment below when testing bot using .env
 # from dotenv import load_dotenv 
 import os
 
@@ -314,25 +314,22 @@ def choosing_format(update: Update, context: CallbackContext):
             line = line['text'].replace("\n", " ")
             text_formatted = text_formatted + line + " "
             continue
-        if i < len(returned_data) - 1:
-             time_text = "{} --> {}".format(
-                make_timestamp(line["start"], user_format),
-                make_timestamp(returned_data[i+1]['start'], user_format)
-            )
-        else:
-            duration = line["start"] + line["duration"]
-            time_text = "{} --> {}".format(
-                make_timestamp(line["start"], user_format),
-                make_timestamp(duration, user_format)
-            )
+        end = line['start'] + line['duration']
+        time_text = "{} --> {}".format(
+        make_timestamp(line["start"], user_format),
+        make_timestamp(
+            returned_data[i+1]['start']
+            if i<len(returned_data) - 1 and returned_data[i+1]['start'] < end else end,
+            user_format)
+        )
         if user_format == "VTT":
             lines.append("{}\n{}".format(time_text, line['text']))
-        if user_format == "SRT":
+        elif user_format == "SRT":
             lines.append(
                 str(i+1)+'\n'+"{}\n{}".format(time_text, line['text']))
     if user_format == "TXT":
         text_formatted = TextFormatter().format_transcript(returned_data)
-    if user_format == "VTT":
+    elif user_format == "VTT":
         formated_string = "WEBVTT\n\n" + "\n\n".join(lines) + "\n"
         create_file(formated_string, 'vtt', user_chat_id)
     elif user_format == "SRT":
@@ -512,7 +509,6 @@ def main():
         fallbacks=[CommandHandler("start", start), CommandHandler(
             "broadcast", broadcast), CommandHandler(
             "stat", stat)],
-        # persistent=True
     )
 
     dispatcher.add_handler(conversation_handler)

@@ -1,7 +1,9 @@
 from redis import Redis
+## uncomment the comment below when testing bot using .env
 # from dotenv import load_dotenv 
 import logging
-# load_dotenv()
+##uncomment this after filling the .env folder
+# load_dotenv() 
 import os
 
 logging.basicConfig(
