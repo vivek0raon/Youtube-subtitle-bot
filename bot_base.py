@@ -56,7 +56,7 @@ choose_button_markup = ReplyKeyboardMarkup(
 
 
 def is_url(text):
-    youtube_link_pattern = r"(be\/|embed\/|v\/|e\/|a=|v=)([^\/&?\n\r=#\s]*)"
+    youtube_link_pattern = r"(be\/|embed\/|shorts\/|v\/|e\/|a=|v=)([^\/&?\n\r=#\s]*)"
     link = re.search(youtube_link_pattern, text)
     if link:
         return link.group(2)
