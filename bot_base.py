@@ -1,4 +1,4 @@
-#Install the  required module using -> pip install -r requirements.txt
+# Install the  required module using -> pip install -r requirements.txt
 import re
 import logging
 import requests
@@ -6,7 +6,7 @@ import urllib
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
 ##uncomment the comment below when testing bot using .env
-# from dotenv import load_dotenv 
+#from dotenv import load_dotenv
 import os
 
 from Addons import db
@@ -33,8 +33,9 @@ from telegram.ext import (
 )
 
 from telegram.utils.helpers import escape_markdown
+
 ##uncomment this after filling the .env folder
-# load_dotenv()
+#load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -91,7 +92,7 @@ def make_timestamp(time, user_format):
     time = float(time)
     hours, remainder = divmod(time, 3600)
     mins, secs = divmod(remainder, 60)
-    ms = int(round((time - int(time))*1000, 2))
+    ms = int(round((time - int(time)) * 1000, 2))
     secs = int(secs)
     if user_format == "VTT":
         return "{:02.0f}:{:02.0f}:{:02.0f}.{:03d}".format(hours, mins, secs, ms)
@@ -120,7 +121,7 @@ def button_formater(button_list):
     button_page = {}
     page_no = 1
     for i in range(0, no_of_buttons, 5):
-        new_button_list = button_list[i:i+5]
+        new_button_list = button_list[i:i + 5]
         new_button_list.append([InlineKeyboardButton(
             text="<<", callback_data="<<"), InlineKeyboardButton(text=">>", callback_data=">>")])
         button_page[page_no] = new_button_list
@@ -130,9 +131,9 @@ def button_formater(button_list):
 
 
 def start(update: Update, context: CallbackContext):
-    update.message.reply_text(text=f"🙋*Hello* {escape_markdown(update.effective_user.first_name,version=2)},\n"
-                              "☑️*Click on Extract subtitle to Extract subtitle*\n"
-                              "☑️*Click on Help if you need help regarding any error that you are geting while using this bot*",
+    update.message.reply_text(text=f"🙋*Hello* {escape_markdown(update.effective_user.first_name, version=2)},\n"
+                                   "☑️*Click on Extract subtitle to Extract subtitle*\n"
+                                   "☑️*Click on Help if you need help regarding any error that you are geting while using this bot*",
                               reply_markup=choose_button_markup,
                               parse_mode=ParseMode.MARKDOWN_V2)
     chat_id = update.message.chat_id
@@ -158,28 +159,29 @@ def choosing(update: Update, context: CallbackContext):
     if choice_text == "ℹ️ Help" or choice_text == "Help" or choice_text == "help":
         update.message.reply_text(
             text="*Here is 🗒️list of things i can do for you:*\n"
-            "🔍*Extract subtitle from youtube links in different languages*\n"
-            "🔠Translate subtitle of pariticular video in different languages\n\n"
-            "*To extract subtitle follow this step:*\n"
-            "👉_Click on Extract subtitle then give your link of youtube video from which you want to extract subtitle_\n"
-            "👉_Click on available language or click on translate to translate subtitle into the unavaliable language_\n"
-            "🔐_Choose format 'VTT', 'SRT' or TXT \(WITHOUT TIMESTAMP\)\. NO WORD WRAP version of TXT will extract subtitle as paragraph_\n"
-            "🙃Done\n\n"
-            "🔴*ANY PROBLEM?*\n"
-            "👉_Make sure that the video link is valid_\n"
-            "👉_Make sure that the video have subtitle available either mannual or generated_\n"
-            "👉_Make sure that video isn't georestricted_\n"
-            "👉_Make sure that video isn't age restricted_\n\n"
-            "*Didn't find your solution contact @my\_name\_is\_vivek , stating your problem with video link attached which isn't working for you\.*",
+                 "🔍*Extract subtitle from youtube links in different languages*\n"
+                 "🔠Translate subtitle of pariticular video in different languages\n\n"
+                 "*To extract subtitle follow this step:*\n"
+                 "👉_Click on Extract subtitle then give your link of youtube video from which you want to extract subtitle_\n"
+                 "👉_Click on available language or click on translate to translate subtitle into the unavaliable language_\n"
+                 "🔐_Choose format 'VTT', 'SRT' or TXT \(WITHOUT TIMESTAMP\)\. NO WORD WRAP version of TXT will extract subtitle as paragraph_\n"
+                 "🙃Done\n\n"
+                 "🔴*ANY PROBLEM?*\n"
+                 "👉_Make sure that the video link is valid_\n"
+                 "👉_Make sure that the video have subtitle available either mannual or generated_\n"
+                 "👉_Make sure that video isn't georestricted_\n"
+                 "👉_Make sure that video isn't age restricted_\n\n"
+                 "*Didn't find your solution contact @my\_name\_is\_vivek , stating your problem with video link attached which isn't working for you\.*",
             parse_mode=ParseMode.MARKDOWN_V2
         )
 
-# MAKING BUTTON TO CHOOSE 
-format_button = [[InlineKeyboardButton(text="SRT", callback_data="SRT")], 
-    [InlineKeyboardButton(text='VTT', callback_data="VTT")], 
-    [InlineKeyboardButton(text='TXT (NO TIMESTAMP)', callback_data="TXT")],
-    [InlineKeyboardButton(text='TXT (NO TIMESTAMP) NO WORD WRAP', callback_data="TXT_W")],
-    [InlineKeyboardButton(text="🔙 Back", callback_data="back")]]
+
+# MAKING BUTTON TO CHOOSE
+format_button = [[InlineKeyboardButton(text="SRT", callback_data="SRT")],
+                 [InlineKeyboardButton(text='VTT', callback_data="VTT")],
+                 [InlineKeyboardButton(text='TXT (NO TIMESTAMP)', callback_data="TXT")],
+                 [InlineKeyboardButton(text='TXT (NO TIMESTAMP) NO WORD WRAP', callback_data="TXT_W")],
+                 [InlineKeyboardButton(text="🔙 Back", callback_data="back")]]
 
 format_button_markup = InlineKeyboardMarkup(format_button)
 
@@ -209,7 +211,7 @@ def choosing_language(update: Update, context: CallbackContext):
         "🔠 *language selected*: {} ".format(escape_markdown(user_language, version=2)),
         parse_mode=ParseMode.MARKDOWN_V2)
     context.user_data["selected_language"] = selected_language
-    
+
     if user_language in language:
         language_code = language_dictionary[user_language]
         check_generated = "_g" in language_code
@@ -225,12 +227,12 @@ def choosing_language(update: Update, context: CallbackContext):
     else:
         translate_dictionary = context.user_data["translate_dictionary"]
         language_code = translate_dictionary[user_language]
-        #fixing the english translation 
+        # fixing the english translation
         notavailable = True
         if user_language == "English":
             try:
                 returned_data = YouTubeTranscriptApi.get_transcript(
-                video_id, languages=[language_code])
+                    video_id, languages=[language_code])
                 context.user_data["returned_data"] = returned_data
                 notavailable = False
             except:
@@ -256,7 +258,7 @@ def translate(update: Update, context: CallbackContext):
         transcript = transcript_list.find_transcript(["en"])
     except:
         transcript = transcript_list.find_transcript(
-            [f'{list(language_dictionary.values())[0].replace("_g","")}'])
+            [f'{list(language_dictionary.values())[0].replace("_g", "")}'])
         pass
     context.user_data["transcript"] = transcript
     translate_list = transcript.translation_languages
@@ -267,8 +269,8 @@ def translate(update: Update, context: CallbackContext):
         language_code = translate_list[i]["language_code"]
         translate_dictionary[language] = language_code
         try:
-            language2 = translate_list[i+1]["language"]
-            language_code2 = translate_list[i+1]["language_code"]
+            language2 = translate_list[i + 1]["language"]
+            language_code2 = translate_list[i + 1]["language_code"]
             translate_dictionary[language2] = language_code2
             translate_button = [InlineKeyboardButton(text=language, callback_data=language), InlineKeyboardButton(
                 text=language2, callback_data=language2)]
@@ -297,12 +299,13 @@ def choosing_format(update: Update, context: CallbackContext):
         selected_language = context.user_data.get("selected_language")
         selected_language.delete()
         language_button = context.user_data.get("language_button")
-        update.callback_query.message.edit_text(text="*⏬Choose the available language in this video or Click on* _Translate_ *to translate subtitle to other 🉐languages:*",
-                                                    reply_markup=language_button,
-                                                    parse_mode=ParseMode.MARKDOWN_V2)
+        update.callback_query.message.edit_text(
+            text="*⏬Choose the available language in this video or Click on* _Translate_ *to translate subtitle to other 🉐languages:*",
+            reply_markup=language_button,
+            parse_mode=ParseMode.MARKDOWN_V2)
         return CHOOSING_LANGUAGE
     user_chat_id = update.callback_query.message.chat_id
-    Display_format = user_format.replace("_W","")
+    Display_format = user_format.replace("_W", "")
     bot_message = update.callback_query.message.edit_text(
         text=f"*Format: {Display_format}\n\n🟢Your subtitle is ready:*",
         parse_mode=ParseMode.MARKDOWN_V2)
@@ -316,36 +319,35 @@ def choosing_format(update: Update, context: CallbackContext):
             continue
         end = line['start'] + line['duration']
         time_text = "{} --> {}".format(
-        make_timestamp(line["start"], user_format),
-        make_timestamp(
-            returned_data[i+1]['start']
-            if i<len(returned_data) - 1 and returned_data[i+1]['start'] < end else end,
-            user_format)
+            make_timestamp(line["start"], user_format),
+            make_timestamp(
+                returned_data[i + 1]['start']
+                if i < len(returned_data) - 1 and returned_data[i + 1]['start'] < end else end,
+                user_format)
         )
         if user_format == "VTT":
             lines.append("{}\n{}".format(time_text, line['text']))
         elif user_format == "SRT":
             lines.append(
-                str(i+1)+'\n'+"{}\n{}".format(time_text, line['text']))
+                str(i + 1) + '\n' + "{}\n{}".format(time_text, line['text']))
     if user_format == "TXT":
         text_formatted = TextFormatter().format_transcript(returned_data)
+        create_file(text_formatted, 'txt', user_chat_id)
     elif user_format == "VTT":
         formated_string = "WEBVTT\n\n" + "\n\n".join(lines) + "\n"
         create_file(formated_string, 'vtt', user_chat_id)
     elif user_format == "SRT":
         formated_string = "\n\n".join(lines) + "\n"
         create_file(formated_string, 'srt', user_chat_id)
-    elif user_format == "TXT":
-        text_formatted.replace("  ", " ")
-        create_file(text_formatted , 'txt', user_chat_id)
     elif user_format == "TXT_W":
-         create_file(text_formatted , 'txt', user_chat_id)
-         user_format = "TXT"
+        create_file(text_formatted, 'txt', user_chat_id)
+        user_format = "TXT"
     video_id = context.user_data.get('video_id')
     my_file_name = video_title(video_id)
     context.bot.send_document(user_chat_id, open(
         f"{user_chat_id}.{user_format.lower()}", "rb"), f"{my_file_name}.{user_format.lower()}",
-        reply_markup=choose_button_markup, caption=f"Made with 🧠 \n~by @{bot_message.from_user.username}")
+                              reply_markup=choose_button_markup,
+                              caption=f"Made with 🧠 \n~by @{bot_message.from_user.username}")
     os.remove(f"{user_chat_id}.{user_format.lower()}")
     if context.user_data.get("returned_data"):
         del context.user_data["returned_data"]
@@ -371,8 +373,9 @@ def sending_youtube_url(update: Update, context: CallbackContext):
         if button_dictionary == CHOOSING:
             return CHOOSING
         language_button, language_dictionary = button_dictionary
-        update.message.reply_text(text="*⏬Choose the available language in this video or Click on* _Translate_ *to translate subtitle to other 🉐languages:*",
-                                  reply_markup=language_button, parse_mode=ParseMode.MARKDOWN_V2)
+        update.message.reply_text(
+            text="*⏬Choose the available language in this video or Click on* _Translate_ *to translate subtitle to other 🉐languages:*",
+            reply_markup=language_button, parse_mode=ParseMode.MARKDOWN_V2)
         context.user_data["language_button"] = language_button
         context.user_data["language_dictionary"] = language_dictionary
         return CHOOSING_LANGUAGE
@@ -386,7 +389,7 @@ def stat(update: Update, context: CallbackContext):
 
 
 def broadcast(update: Update, context: CallbackContext):
-    update.message.reply_text(text = " Send me your the message to broadcast")
+    update.message.reply_text(text=" Send me your the message to broadcast")
     return SEND_BROADCAST
 
 
@@ -399,47 +402,48 @@ def send_broadcast(update: Update, context: CallbackContext):
         try:
             if message_type == 'text':
                 msg = update.message.text
-                context.bot.send_message(int(i),msg)
+                context.bot.send_message(int(i), msg)
             elif message_type == 'photo':
                 msg = update.message.photo
                 image_caption = update.message.caption
                 if image_caption == None:
-                    context.bot.send_photo(int(i),msg[-1])
+                    context.bot.send_photo(int(i), msg[-1])
                 else:
-                    context.bot.send_photo(int(i),msg[-1],caption= image_caption)
+                    context.bot.send_photo(int(i), msg[-1], caption=image_caption)
             elif message_type == 'video':
                 msg = update.message.video
                 video_caption = update.message.caption
                 if video_caption == None:
-                    context.bot.send_video(int(i),msg)
+                    context.bot.send_video(int(i), msg)
                 else:
-                    context.bot.send_video(int(i),msg,caption= video_caption)
+                    context.bot.send_video(int(i), msg, caption=video_caption)
             elif message_type == 'audio':
                 msg = update.message.audio
                 audio_caption = update.message.caption
                 if audio_caption == None:
-                    context.bot.send_audio(int(i),msg)
+                    context.bot.send_audio(int(i), msg)
                 else:
-                    context.bot.send_audio(int(i),msg,caption= audio_caption)
+                    context.bot.send_audio(int(i), msg, caption=audio_caption)
             elif message_type == 'document':
                 msg = update.message.document
                 document_caption = update.message.caption
                 if document_caption == None:
-                    context.bot.send_document(int(i),msg)
+                    context.bot.send_document(int(i), msg)
                 else:
-                    context.bot.send_document(int(i),msg,caption= document_caption)
+                    context.bot.send_document(int(i), msg, caption=document_caption)
             elif message_type == 'voice':
                 msg = update.message.voice
-                context.bot.send_voice(int(i),msg)
+                context.bot.send_voice(int(i), msg)
             elif message_type == 'video_note':
                 msg = update.message.video_note
-                context.bot.send_video_note(int(i),msg)
-            done +=1
+                context.bot.send_video_note(int(i), msg)
+            done += 1
         except Exception as e:
-            error +=1
+            error += 1
             log.exception(e)
     update.message.reply_text("📩 Broadcast completed.\n\n🟩 Success: {}\n🟥 Failed: {}".format(done, error))
     return ConversationHandler.END
+
 
 def done(update: Update, context: CallbackContext):
     update.message.reply_text(
@@ -491,7 +495,7 @@ def main():
             ],
         },
         fallbacks=[CommandHandler("start", start), MessageHandler(
-            Filters.regex('^(👋Done|Done|done)$',), done)],
+            Filters.regex('^(👋Done|Done|done)$', ), done)],
         name="conversation_with_user",
         persistent=True
     )
@@ -504,7 +508,7 @@ def main():
         ],
         states={SEND_BROADCAST: [
             MessageHandler(
-                    Filters.all, send_broadcast)
+                Filters.all, send_broadcast)
         ]},
         fallbacks=[CommandHandler("start", start), CommandHandler(
             "broadcast", broadcast), CommandHandler(
