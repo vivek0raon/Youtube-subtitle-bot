@@ -67,7 +67,8 @@ def no_of_subtitle(video_id, update, context):
     try:
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
         context.user_data["transcript_list"] = transcript_list
-    except:
+    except Exception as e:
+        log.error(e)
         update.message.reply_text("No subtitle available for this video",
                                   reply_markup=choose_button_markup)
         return CHOOSING
